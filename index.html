@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Calculadora de Impresión | Xerox 550 Digital Press</title>
+    <meta name="description" content="TPV interno para copistería. Calcula presupuestos de impresión con tarifas por volumen, IVA y control de rentabilidad.">
+    <meta name="theme-color" content="#da291c">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨️</text></svg>">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+</head>
+
+<body role="application" aria-label="Calculadora de presupuestos Xerox 550">
+    <div class="container" role="main">
+        <div id="loading" class="loading-overlay" role="status" aria-label="Cargando archivos..." aria-live="polite">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px; text-align: center; color: var(--text-primary);">Procesando PDF...</p>
+        </div>
+
+        <div class="header-row">
+            <h1>Xerox 550</h1>
+            <button class="toggle-dark" id="toggle-dark" title="Cambiar entre modo claro y oscuro" aria-label="Alternar modo oscuro">🌙</button>
+        </div>
+        <p class="subtitle">Calculadora de presupuestos de impresión pro</p>
+
+        <div id="drop-zone" role="button" tabindex="0" aria-label="Zona de carga de archivos PDF. Arrastra archivos aquí o haz clic para seleccionar" aria-describedby="drop-instructions">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+            </svg>
+            <p>Sube tus PDFs para empezar</p>
+            <span id="drop-instructions" style="font-size: 13px; color: var(--text-secondary)">Arrastra los archivos o presiona Enter. Máximo 50 MB por archivo</span>
+            <input type="file" id="file-input" accept=".pdf" multiple hidden aria-label="Seleccionar archivos PDF">
+        </div>
+        <div id="drop-error" role="alert" aria-live="polite" style="display: none; padding: 12px; margin-top: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px; color: #ef4444; font-size: 13px;"></div>
+
+        <div id="config-panel" style="display:none;" role="form" aria-label="Configuración de impresión">
+            <h2>Configuración</h2>
+            
+            <label for="color-type">Tipo de impresión</label>
+            <select id="color-type" aria-label="Seleccionar tipo de impresión">
+                <option value="bn" selected>Blanco y Negro</option>
+                <option value="color">Color Digital Premium</option>
+            </select>
+
+            <label for="sides">Lados</label>
+            <select id="sides" aria-label="Seleccionar modo de impresión">
+                <option value="1" id="simplex-label">Simplex</option>
+                <option value="2" id="duplex-label">Dúplex</option>
+            </select>
+
+            <div class="tier-badge" id="tier-badge" aria-live="polite" aria-atomic="true"></div>
+
+            <section class="resumen" aria-label="Resumen de presupuesto" aria-live="polite" aria-atomic="true">
+                <div id="file-list" style="margin-bottom: 10px; font-size: 13px; color: var(--text-secondary); background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); display: none;"></div>
+
+                <p>Gestión de archivos: <span style="font-weight: 500;">0,80€</span></p>
+                <p>Páginas PDF: <span id="page-count" style="font-weight: 700;">0</span></p>
+                <p>Hojas físicas: <span id="sheets-count" style="font-weight: 500;">0</span></p>
+                <p style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">Coste Copias: <span id="copy-price" style="font-weight: 500;">0.00€</span></p>
+                <p>Base Imponible: <span id="total-base" style="font-weight: 500;">0.80€</span></p>
+
+                <p>IVA (21%): <span id="iva-amount" style="font-weight: 500;">0.17€</span></p>
+                <h4 style="margin-top: 15px; font-size: 24px;">Total <span id="total-price" style="color: var(--xerox-red);">0.97€</span></h4>
+                <p style="font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: -8px;">(IVA Incluido)</p>
+                
+                <p id="min-warning" role="alert" aria-live="assertive" style="color: var(--xerox-red); font-size: 13px; font-weight: 600; text-align: center; display: none; margin-top: 8px;">
+                    ⚠️ Pedido mínimo: 1,00€ (IVA incluido)
+                </p>
+            </section>
+
+            <div class="btn-group" role="group" aria-label="Acciones principales">
+                <button id="btn-order" aria-label="Confirmar pedido">🛒 Confirmar</button>
+                <button id="btn-print" aria-label="Imprimir ticket">🖨️ Ticket</button>
+            </div>
+            <button id="btn-reset" aria-label="Iniciar nuevo presupuesto">🔄 Nuevo Presupuesto</button>
+        </div>
+
+        <!-- Revista Calculator -->
+        <div id="revista-section" role="region" aria-label="Calculadora de revistas">
+            <button id="btn-toggle-revista" aria-expanded="false" aria-controls="revista-panel">
+                📖 Calcular Revistas / Catálogos
+            </button>
+            <div id="revista-panel" style="display:none;" role="form" aria-label="Configuración de revista">
+                <h2 style="margin-bottom:20px;">📖 Presupuesto Revista</h2>
+
+                <div class="revista-grid">
+                    <div>
+                        <label for="rev-copies">Nº de ejemplares</label>
+                        <input type="number" id="rev-copies" min="1" max="9999" value="100" aria-label="Número de ejemplares">
+                    </div>
+                    <div>
+                        <label for="rev-pages">Páginas interiores</label>
+                        <input type="number" id="rev-pages" min="4" max="500" step="4" value="24" aria-label="Páginas interiores (múltiplo de 4)">
+                    </div>
+                    <div>
+                        <label for="rev-interior">Interior impresión</label>
+                        <select id="rev-interior" aria-label="Tipo de impresión interior">
+                            <option value="bn">Blanco y Negro</option>
+                            <option value="color" selected>Color</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="rev-interior-gsm">Gramaje interior</label>
+                        <select id="rev-interior-gsm" aria-label="Gramaje papel interior">
+                            <option value="80" selected>80g (estándar)</option>
+                            <option value="100">100g (semisatinado)</option>
+                            <option value="130">130g (satinado)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="rev-cover">Portada gramaje</label>
+                        <select id="rev-cover" aria-label="Gramaje portada">
+                            <option value="200">Color 200g</option>
+                            <option value="250">Color 250g</option>
+                            <option value="300" selected>Color 300g</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="rev-binding">Encuadernación</label>
+                        <select id="rev-binding" aria-label="Tipo de encuadernación">
+                            <option value="grapado" selected>Grapado (caballito)</option>
+                            <option value="fresado">Fresado (cola)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="rev-margin">Margen objetivo %</label>
+                        <input type="number" id="rev-margin" min="10" max="90" value="45" aria-label="Margen objetivo en porcentaje">
+                    </div>
+                </div>
+
+                <div id="rev-page-warning" role="alert" style="display:none; font-size:12px; color:#facc15; margin-top:6px;">
+                    ⚠️ Las páginas interiores deben ser múltiplo de 4
+                </div>
+
+                <section class="resumen revista-resumen" aria-label="Resumen presupuesto revista" aria-live="polite" aria-atomic="true">
+                    <p>Coste papel interior: <span id="rev-cost-interior">0.00€</span></p>
+                    <p>Coste portada (250/300g): <span id="rev-cost-cover">0.00€</span></p>
+                    <p>Coste impresión (clicks): <span id="rev-cost-clicks">0.00€</span></p>
+                    <p>Coste encuadernación: <span id="rev-cost-binding">0.00€</span></p>
+                    <p style="border-top:1px solid var(--border-color); padding-top:10px; margin-top:4px;">
+                        Coste total producción: <span id="rev-cost-total" style="font-weight:700;">0.00€</span>
+                    </p>
+                    <p>Coste por ejemplar: <span id="rev-cost-unit">0.00€</span></p>
+                    <p style="border-top:1px solid var(--border-color); padding-top:10px; margin-top:4px;">
+                        PVP sugerido/ejemplar: <span id="rev-pvp-unit" style="font-weight:700; color:var(--xerox-red);">0.00€</span>
+                    </p>
+                    <p>PVP total lote (sin IVA): <span id="rev-pvp-base">0.00€</span></p>
+                    <p>IVA (21%): <span id="rev-iva">0.00€</span></p>
+                    <h4 style="margin-top:15px; font-size:22px;">Total <span id="rev-pvp-total" style="color:var(--xerox-red);">0.00€</span></h4>
+                    <p style="font-size:11px; color:var(--text-secondary); text-align:center; margin-top:-8px;">(IVA Incluido)</p>
+                </section>
+
+                <!-- Admin rentabilidad revista -->
+                <div id="rev-admin" style="margin-top:16px; padding:16px; border-radius:12px; background:var(--xerox-dark); color:white;">
+                    <div class="admin-header">⚙️ Rentabilidad Revista <span class="admin-badge">ADMIN</span></div>
+                    <div class="admin-grid">
+                        <div class="stat"><p>Papel + Luz</p><p id="rev-adm-paper">0.00€</p></div>
+                        <div class="stat"><p>Clicks Xerox</p><p id="rev-adm-clicks">0.00€</p></div>
+                        <div class="stat"><p>Encuadernación</p><p id="rev-adm-binding">0.00€</p></div>
+                        <div class="stat"><p>Ingreso Neto</p><p id="rev-adm-revenue" style="color:#4ade80;">0.00€</p></div>
+                        <div class="stat"><p>Margen Real</p><p id="rev-adm-margin" style="color:#4ade80;">0.00€</p></div>
+                        <div class="stat"><p>% Margen</p><p id="rev-adm-pct" style="color:#facc15;">0%</p></div>
+                    </div>
+                </div>
+
+                <div class="btn-group" style="margin-top:16px;">
+                    <button id="rev-btn-order" aria-label="Confirmar pedido de revista">🛒 Confirmar</button>
+                    <button id="rev-btn-print" aria-label="Imprimir ticket de revista">🖨️ Ticket</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="admin-panel" role="region" aria-label="Panel de administración" aria-live="polite">
+            <div class="admin-header">
+                ⚙️ Xerox Business Dashboard <span class="admin-badge">ADMIN</span>
+            </div>
+            
+            <div class="admin-grid">
+                <div class="stat">
+                    <p>Papel + Luz (Ofiterra)</p>
+                    <p id="admin-cost-paper">0.00€</p>
+                </div>
+                <div class="stat">
+                    <p>Click + Averías (Peplogar)</p>
+                    <p id="admin-cost-click">0.00€</p>
+                </div>
+                <div class="stat">
+                    <p>Ingreso Neto (Ex-IVA)</p>
+                    <p id="admin-revenue-base" style="color: #4ade80;">0.00€</p>
+                </div>
+                <div class="stat">
+                    <p>Margen Real (EBITDA)</p>
+                    <p id="admin-margin" style="color: var(--xerox-red); font-size: 18px;">0.00€</p>
+                </div>
+                <div class="stat">
+                    <p>% Margen</p>
+                    <p id="admin-margin-pct" style="color: #facc15;">0%</p>
+                </div>
+                <div class="stat">
+                    <p>Coste Total</p>
+                    <p id="admin-cost-total">0.00€</p>
+                </div>
+            </div>
+
+            <div class="admin-footer">
+                Costes: 20 paquetes Ofiterra + consumibles Peplogar + provisión averías.
+            </div>
+        </div>
+
+        <!-- Daily History Panel -->
+        <div id="history-panel" role="region" aria-label="Historial del día">
+            <div class="history-header">
+                <h3>📊 Resumen del Día</h3>
+                <button id="history-clear">Borrar historial</button>
+            </div>
+            <div class="history-summary">
+                <div class="hs">
+                    <p>Trabajos</p>
+                    <p id="hist-count">0</p>
+                </div>
+                <div class="hs">
+                    <p>Facturado</p>
+                    <p id="hist-revenue" style="color: #4ade80;">0€</p>
+                </div>
+                <div class="hs">
+                    <p>Beneficio</p>
+                    <p id="hist-profit" style="color: var(--xerox-red);">0€</p>
+                </div>
+            </div>
+            <div id="history-list"></div>
+        </div>
+    </div>
+
+    <!-- Cash Register Sound (base64 encoded short beep) -->
+    <audio id="cash-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRl4AAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YToAAAAAAAAAAAAAgD+AAACA/3+A/4CAgICAgICAgICAgICA/38AgACA/38AAID/gP+AgICAgICAgICAgID/fwCAAIAAAA==" type="audio/wav">
+    </audio>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
