@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const copyPriceSpan = document.getElementById('copy-price');
     const fileListDiv = document.getElementById('file-list');
     const sheetsCountSpan = document.getElementById('sheets-count');
+    const manualPagesInput = document.getElementById('manual-pages');
 
     const minWarningSpan = document.getElementById('min-warning');
     const tierBadge = document.getElementById('tier-badge');
@@ -80,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const COST_MAINT_COLOR = 0.035; // Drums + Toner Color (Peplogar)
     const COST_REPAIRS = 0.005;     // Provisión para Averías (Fusor, Banda, etc)
 
-    // Precios PVP con IVA incluido (tarifas por tramos)
+    // Precios Base Imponible (tasas por tramos, sin IVA)
 
     const PRICING = {
         bn: {
@@ -108,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ═══════════════════════════════════════════════════
     // 4. ESTADO
     // ═══════════════════════════════════════════════════
-    let numPages = 0;
+    let numPages = 1;
     let lastCalc = null; // Último cálculo para historial
 
     // ═══════════════════════════════════════════════════
@@ -205,7 +206,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function processAllPDFs(files) {
         loadingOverlay.style.display = 'flex';
-        configPanel.style.display = 'none';
         adminPanel.style.display = 'none';
         dropError.style.display = 'none';
         numPages = 0;
@@ -244,8 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
             dropZone.classList.add('success');
             setTimeout(() => dropZone.classList.remove('success'), 1200);
 
+            manualPagesInput.value = numPages;
             pageCountSpan.innerText = numPages;
-            configPanel.style.display = 'block';
             calculatePrice();
         } catch (error) {
             console.error('Error procesando archivos:', error);
@@ -262,8 +262,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ═══════════════════════════════════════════════════
     colorTypeSelect.onchange = calculatePrice;
     sidesSelect.onchange = calculatePrice;
+    manualPagesInput.oninput = () => {
+        numPages = parseInt(manualPagesInput.value) || 0;
+        pageCountSpan.innerText = numPages;
+        calculatePrice();
+    };
 
     function calculatePrice() {
+        const manualVal = manualPagesInput ? parseInt(manualPagesInput.value) : 1;
+        numPages = isNaN(manualVal) ? 1 : manualVal;
         const mode = colorTypeSelect.value;
         const isDuplex = sidesSelect.value === "2";
         
@@ -286,19 +293,15 @@ document.addEventListener('DOMContentLoaded', () => {
         simplexLabel.innerText = `Simplex (${unitSimplex.toFixed(2)}€/pág)`;
         duplexLabel.innerText = `Dúplex (${unitDuplex.toFixed(2)}€/hoja)`;
 
-        // 4. Cálculos
-        let numSheets = isDuplex ? Math.ceil(numPages / 2) : numPages;
-        let totalCopiesPVP = isDuplex ? (numSheets * unitDuplex) : (numPages * unitSimplex);
-        
-        // 6. PVP Total
-        const totalPVP = totalCopiesPVP + GESTION_ARCHIVOS_PVP;
-        
-        // 7. Desglose fiscal
-        const totalBase = totalPVP / IVA_FACTOR;
+        const totalCopiesBase = isDuplex ? (numSheets * unitDuplex) : (numPages * unitSimplex);
+        const totalBase = totalCopiesBase + GESTION_ARCHIVOS_PVP;
+
+        // 6. PVP Total e IVA
+        const totalPVP = totalBase * IVA_FACTOR;
         const ivaAmount = totalPVP - totalBase;
 
         // 8. Actualizar UI
-        if(copyPriceSpan) copyPriceSpan.innerText = totalCopiesPVP.toFixed(2) + '€';
+        if(copyPriceSpan) copyPriceSpan.innerText = totalCopiesBase.toFixed(2) + '€';
         if(totalBaseSpan) totalBaseSpan.innerText = totalBase.toFixed(2) + '€';
         if(ivaAmountSpan) ivaAmountSpan.innerText = ivaAmount.toFixed(2) + '€';
         
@@ -452,14 +455,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         numPages = 0;
         lastCalc = null;
-        configPanel.style.display = 'none';
-        adminPanel.style.display = 'none';
-        fileInput.value = '';
-        fileListDiv.innerHTML = '';
         fileListDiv.style.display = 'none';
         tierBadge.style.display = 'none';
-        pageCountSpan.innerText = '0';
+        numPages = 1;
+        manualPagesInput.value = 1;
+        pageCountSpan.innerText = '1';
         totalPriceSpan.innerText = '0.00€';
+        calculatePrice();
         colorTypeSelect.value = 'bn';
         sidesSelect.value = '1';
         dropError.style.display = 'none';
@@ -509,6 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Cargar historial al iniciar
     renderHistory();
+    calculatePrice();
 
     // ═══════════════════════════════════════════════════
     // 12. CALCULADORA DE REVISTAS

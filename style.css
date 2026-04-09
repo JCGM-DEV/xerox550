@@ -142,7 +142,7 @@ body.dark-mode .toggle-dark:hover {
 /* Drop Zone */
 #drop-zone {
     border: 2px dashed var(--xerox-light-gray);
-    padding: 50px 20px;
+    padding: 30px 20px;
     text-align: center;
     cursor: pointer;
     border-radius: 16px;
@@ -151,8 +151,22 @@ body.dark-mode .toggle-dark:hover {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
     outline: none;
+}
+
+#drop-zone.compact {
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+#drop-zone.compact svg {
+    width: 32px;
+    height: 32px;
+}
+
+#drop-zone.compact p {
+    font-size: 14px;
 }
 
 #drop-zone:focus {
@@ -225,7 +239,8 @@ label {
     margin-bottom: 6px;
 }
 
-select {
+select, 
+input[type="number"] {
     width: 100%;
     padding: 12px;
     border-radius: 10px;
@@ -237,11 +252,13 @@ select {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-select:hover {
+select:hover,
+input[type="number"]:hover {
     border-color: var(--xerox-red);
 }
 
-select:focus {
+select:focus,
+input[type="number"]:focus {
     outline: none;
     border-color: var(--xerox-red);
     box-shadow: 0 0 0 3px rgba(218, 41, 28, 0.1);

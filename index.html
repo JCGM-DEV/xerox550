@@ -27,19 +27,21 @@
         </div>
         <p class="subtitle">Calculadora de presupuestos de impresión pro</p>
 
-        <div id="drop-zone" role="button" tabindex="0" aria-label="Zona de carga de archivos PDF. Arrastra archivos aquí o haz clic para seleccionar" aria-describedby="drop-instructions">
+        <div id="drop-zone" class="compact" role="button" tabindex="0" aria-label="Zona de carga de archivos PDF. Arrastra archivos aquí o haz clic para seleccionar" aria-describedby="drop-instructions">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
             </svg>
-            <p>Sube tus PDFs para empezar</p>
-            <span id="drop-instructions" style="font-size: 13px; color: var(--text-secondary)">Arrastra los archivos o presiona Enter. Máximo 50 MB por archivo</span>
+            <p>Sube tus PDFs (Opcional)</p>
             <input type="file" id="file-input" accept=".pdf" multiple hidden aria-label="Seleccionar archivos PDF">
         </div>
         <div id="drop-error" role="alert" aria-live="polite" style="display: none; padding: 12px; margin-top: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px; color: #ef4444; font-size: 13px;"></div>
 
-        <div id="config-panel" style="display:none;" role="form" aria-label="Configuración de impresión">
+        <div id="config-panel" role="form" aria-label="Configuración de impresión">
             <h2>Configuración</h2>
             
+            <label for="manual-pages">Número de páginas totales</label>
+            <input type="number" id="manual-pages" min="1" max="5000" value="1" aria-label="Introducir número de páginas manualmente">
+
             <label for="color-type">Tipo de impresión</label>
             <select id="color-type" aria-label="Seleccionar tipo de impresión">
                 <option value="bn" selected>Blanco y Negro</option>
