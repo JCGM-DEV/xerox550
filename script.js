@@ -293,6 +293,8 @@ document.addEventListener('DOMContentLoaded', () => {
         simplexLabel.innerText = `Simplex (${unitSimplex.toFixed(2)}€/pág)`;
         duplexLabel.innerText = `Dúplex (${unitDuplex.toFixed(2)}€/hoja)`;
 
+        // 4. Cálculos
+        let numSheets = isDuplex ? Math.ceil(numPages / 2) : numPages;
         const totalCopiesBase = isDuplex ? (numSheets * unitDuplex) : (numPages * unitSimplex);
         const totalBase = totalCopiesBase + GESTION_ARCHIVOS_PVP;
 
