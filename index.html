@@ -54,16 +54,38 @@
                 <option value="2" id="duplex-label">Dúplex</option>
             </select>
 
+            <label for="paper-size">Tamaño</label>
+            <select id="paper-size" aria-label="Seleccionar tamaño de papel">
+                <option value="a4" selected>A4 (210 x 297 mm)</option>
+                <option value="a3">A3 (297 x 420 mm)</option>
+                <option value="sra3">SRA3 (320 x 450 mm)</option>
+            </select>
+
+            <label for="paper-support">Soporte / Papel</label>
+            <select id="paper-support" aria-label="Seleccionar tipo de papel">
+                <option value="normal_80" selected>Papel Normal 80g</option>
+                <option value="estucado_100">Estucado 100g (Fino)</option>
+                <option value="estucado_130">Estucado 130g (Medio-Fino)</option>
+                <option value="estucado_200">Estucado 200g (Semi-Rígido)</option>
+                <option value="estucado_250">Estucado 250g (Cartulina Satinada)</option>
+                <option value="estucado_300">Estucado 300g (Premium Rígido)</option>
+                <option value="cartulina_225">Cartulina Blanca 225g</option>
+                <option value="color_80">Papel de Colores 80g</option>
+            </select>
+
             <div class="tier-badge" id="tier-badge" aria-live="polite" aria-atomic="true"></div>
 
             <section class="resumen" aria-label="Resumen de presupuesto" aria-live="polite" aria-atomic="true">
                 <div id="file-list" style="margin-bottom: 10px; font-size: 13px; color: var(--text-secondary); background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); display: none;"></div>
 
                 <p>Gestión de archivos: <span style="font-weight: 500;">0,80€</span></p>
-                <p>Páginas PDF: <span id="page-count" style="font-weight: 700;">0</span></p>
-                <p>Hojas físicas: <span id="sheets-count" style="font-weight: 500;">0</span></p>
-                <p style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">Coste Copias: <span id="copy-price" style="font-weight: 500;">0.00€</span></p>
-                <p>Base Imponible: <span id="total-base" style="font-weight: 500;">0.80€</span></p>
+                <p>Páginas PDF / Manual: <span id="page-count" style="font-weight: 700;">1</span></p>
+                <p>Papel y Tamaño: <span id="paper-description" style="font-weight: 500;">A4 · Normal 80g</span></p>
+                <p>Hojas físicas: <span id="sheets-count" style="font-weight: 500;">1 hoja</span></p>
+                
+                <p style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">Costo Copias (Click): <span id="copy-price" style="font-weight: 500;">0,10€</span></p>
+                <p>Suplemento Papel: <span id="paper-extra-price" style="font-weight: 500;">0,00€</span></p>
+                <p>Base Imponible: <span id="total-base" style="font-weight: 500;">0,90€</span></p>
 
                 <p>IVA (21%): <span id="iva-amount" style="font-weight: 500;">0.17€</span></p>
                 <h4 style="margin-top: 15px; font-size: 24px;">Total <span id="total-price" style="color: var(--xerox-red);">0.97€</span></h4>

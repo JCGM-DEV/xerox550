@@ -29,6 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileListDiv = document.getElementById('file-list');
     const sheetsCountSpan = document.getElementById('sheets-count');
     const manualPagesInput = document.getElementById('manual-pages');
+    const paperSizeSelect = document.getElementById('paper-size');
+    const paperSupportSelect = document.getElementById('paper-support');
+    const paperExtraPriceSpan = document.getElementById('paper-extra-price');
+    const paperDescriptionSpan = document.getElementById('paper-description');
 
     const minWarningSpan = document.getElementById('min-warning');
     const tierBadge = document.getElementById('tier-badge');
@@ -105,6 +109,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const GESTION_ARCHIVOS_PVP = 0.80;
     const PEDIDO_MINIMO_PVP = 1.00;
     const IVA_FACTOR = 1.21;
+
+    const SIZE_MULTIPLIERS = {
+        a4: 1.0,
+        a3: 2.0,
+        sra3: 2.0
+    };
+
+    const PAPER_SUPPLEMENTS = {
+        normal_80: { label: "Normal 80g", a4: 0.0, a3: 0.0 },
+        estucado_100: { label: "Estucado 100g", a4: 0.15, a3: 0.30 },
+        estucado_130: { label: "Estucado 130g", a4: 0.15, a3: 0.30 },
+        estucado_200: { label: "Estucado 200g", a4: 0.30, a3: 0.60 },
+        estucado_250: { label: "Estucado 250g", a4: 0.30, a3: 0.60 },
+        estucado_300: { label: "Estucado 300g", a4: 0.45, a3: 0.90 },
+        cartulina_225: { label: "Cartulina 225g", a4: 0.30, a3: 0.60 },
+        color_80: { label: "Papel Color 80g", a4: 0.10, a3: 0.20 }
+    };
 
     // ═══════════════════════════════════════════════════
     // 4. ESTADO
@@ -262,8 +283,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ═══════════════════════════════════════════════════
     colorTypeSelect.onchange = calculatePrice;
     sidesSelect.onchange = calculatePrice;
+    paperSizeSelect.onchange = calculatePrice;
+    paperSupportSelect.onchange = calculatePrice;
     manualPagesInput.oninput = () => {
-        numPages = parseInt(manualPagesInput.value) || 0;
+        const manualVal = manualPagesInput ? parseInt(manualPagesInput.value) : 1;
+        numPages = isNaN(manualVal) ? 1 : manualVal;
         pageCountSpan.innerText = numPages;
         calculatePrice();
     };
@@ -273,14 +297,20 @@ document.addEventListener('DOMContentLoaded', () => {
         numPages = isNaN(manualVal) ? 1 : manualVal;
         const mode = colorTypeSelect.value;
         const isDuplex = sidesSelect.value === "2";
+        const paperSize = paperSizeSelect.value;
+        const paperType = paperSupportSelect.value;
+        
+        const sizeMult = SIZE_MULTIPLIERS[paperSize] || 1.0;
+        const paperData = PAPER_SUPPLEMENTS[paperType] || PAPER_SUPPLEMENTS.normal_80;
+        const paperExtraUnit = (paperSize === 'a4') ? paperData.a4 : paperData.a3;
         
         // 1. Buscar tramo
         const config = PRICING[mode];
         const tierIndex = config.tiers.findIndex(t => numPages <= t.max);
         const tier = config.tiers[tierIndex];
         
-        const unitSimplex = tier.simplex;
-        const unitDuplex = tier.duplex;
+        const unitSimplex = tier.simplex * sizeMult;
+        const unitDuplex = tier.duplex * sizeMult;
 
         // 2. Mostrar tramo activo
         const tierLabels = ['1-50 págs', '51-200 págs', '+201 págs'];
@@ -296,13 +326,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // 4. Cálculos
         let numSheets = isDuplex ? Math.ceil(numPages / 2) : numPages;
         const totalCopiesBase = isDuplex ? (numSheets * unitDuplex) : (numPages * unitSimplex);
-        const totalBase = totalCopiesBase + GESTION_ARCHIVOS_PVP;
+        const totalPaperExtraBase = numSheets * paperExtraUnit;
+        const totalBase = totalCopiesBase + totalPaperExtraBase + GESTION_ARCHIVOS_PVP;
 
         // 6. PVP Total e IVA
         const totalPVP = totalBase * IVA_FACTOR;
         const ivaAmount = totalPVP - totalBase;
 
         // 8. Actualizar UI
+        if(paperDescriptionSpan) paperDescriptionSpan.innerText = `${paperSize.toUpperCase()} · ${paperData.label}`;
+        if(paperExtraPriceSpan) paperExtraPriceSpan.innerText = totalPaperExtraBase.toFixed(2) + '€';
         if(copyPriceSpan) copyPriceSpan.innerText = totalCopiesBase.toFixed(2) + '€';
         if(totalBaseSpan) totalBaseSpan.innerText = totalBase.toFixed(2) + '€';
         if(ivaAmountSpan) ivaAmountSpan.innerText = ivaAmount.toFixed(2) + '€';
