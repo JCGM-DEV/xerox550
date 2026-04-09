@@ -117,14 +117,38 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const PAPER_SUPPLEMENTS = {
-        normal_80: { label: "Normal 80g", a4: 0.0, a3: 0.0 },
-        estucado_100: { label: "Estucado 100g", a4: 0.15, a3: 0.30 },
-        estucado_130: { label: "Estucado 130g", a4: 0.15, a3: 0.30 },
-        estucado_200: { label: "Estucado 200g", a4: 0.30, a3: 0.60 },
-        estucado_250: { label: "Estucado 250g", a4: 0.30, a3: 0.60 },
-        estucado_300: { label: "Estucado 300g", a4: 0.45, a3: 0.90 },
-        cartulina_225: { label: "Cartulina 225g", a4: 0.30, a3: 0.60 },
-        color_80: { label: "Papel Color 80g", a4: 0.10, a3: 0.20 }
+        normal_80: { 
+            label: "Normal 80g", 
+            tiers: [{ max: Infinity, price: 0.0 }] 
+        },
+        estucado_100: { 
+            label: "Estucado 100g", 
+            tiers: [{ max: 50, price: 0.15 }, { max: 200, price: 0.10 }, { max: Infinity, price: 0.06 }] 
+        },
+        estucado_130: { 
+            label: "Estucado 130g", 
+            tiers: [{ max: 50, price: 0.15 }, { max: 200, price: 0.10 }, { max: Infinity, price: 0.06 }] 
+        },
+        estucado_200: { 
+            label: "Estucado 200g", 
+            tiers: [{ max: 50, price: 0.30 }, { max: 200, price: 0.20 }, { max: Infinity, price: 0.12 }] 
+        },
+        estucado_250: { 
+            label: "Estucado 250g", 
+            tiers: [{ max: 50, price: 0.30 }, { max: 200, price: 0.20 }, { max: Infinity, price: 0.12 }] 
+        },
+        estucado_300: { 
+            label: "Estucado 300g", 
+            tiers: [{ max: 50, price: 0.45 }, { max: 200, price: 0.25 }, { max: Infinity, price: 0.15 }] 
+        },
+        cartulina_225: { 
+            label: "Cartulina 225g", 
+            tiers: [{ max: 50, price: 0.30 }, { max: 200, price: 0.20 }, { max: Infinity, price: 0.12 }] 
+        },
+        color_80: { 
+            label: "Papel Color 80g", 
+            tiers: [{ max: 50, price: 0.10 }, { max: 200, price: 0.07 }, { max: Infinity, price: 0.05 }] 
+        }
     };
 
     // ═══════════════════════════════════════════════════
@@ -301,10 +325,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const paperType = paperSupportSelect.value;
         
         const sizeMult = SIZE_MULTIPLIERS[paperSize] || 1.0;
-        const paperData = PAPER_SUPPLEMENTS[paperType] || PAPER_SUPPLEMENTS.normal_80;
-        const paperExtraUnit = (paperSize === 'a4') ? paperData.a4 : paperData.a3;
+        const paperConfig = PAPER_SUPPLEMENTS[paperType] || PAPER_SUPPLEMENTS.normal_80;
         
-        // 1. Buscar tramo
+        let numSheets = isDuplex ? Math.ceil(numPages / 2) : numPages;
+
+        // Buscar tramo de papel según cantidad de hojas
+        const paperTier = paperConfig.tiers.find(t => numSheets <= t.max) || paperConfig.tiers[paperConfig.tiers.length - 1];
+        const paperExtraUnit = paperTier.price * sizeMult;
+        
+        // 1. Buscar tramo de impresión (click)
         const config = PRICING[mode];
         const tierIndex = config.tiers.findIndex(t => numPages <= t.max);
         const tier = config.tiers[tierIndex];
@@ -324,7 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
         duplexLabel.innerText = `Dúplex (${unitDuplex.toFixed(2)}€/hoja)`;
 
         // 4. Cálculos
-        let numSheets = isDuplex ? Math.ceil(numPages / 2) : numPages;
         const totalCopiesBase = isDuplex ? (numSheets * unitDuplex) : (numPages * unitSimplex);
         const totalPaperExtraBase = numSheets * paperExtraUnit;
         const totalBase = totalCopiesBase + totalPaperExtraBase + GESTION_ARCHIVOS_PVP;
@@ -334,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const ivaAmount = totalPVP - totalBase;
 
         // 8. Actualizar UI
-        if(paperDescriptionSpan) paperDescriptionSpan.innerText = `${paperSize.toUpperCase()} · ${paperData.label}`;
+        if(paperDescriptionSpan) paperDescriptionSpan.innerText = `${paperSize.toUpperCase()} · ${paperConfig.label} (${paperExtraUnit.toFixed(2)}€/hoja)`;
         if(paperExtraPriceSpan) paperExtraPriceSpan.innerText = totalPaperExtraBase.toFixed(2) + '€';
         if(copyPriceSpan) copyPriceSpan.innerText = totalCopiesBase.toFixed(2) + '€';
         if(totalBaseSpan) totalBaseSpan.innerText = totalBase.toFixed(2) + '€';
