@@ -1,5 +1,7 @@
 # Xerox 550 - Calculadora de Presupuestos para Copistería
 
+[![Live Demo](https://img.shields.io/badge/Acceso_Directo-Ver_Web-da291c?style=for-the-badge&logo=googlechrome&logoColor=white)](https://jcgm.dev/xerox550/)
+
 Una aplicación web moderna y accesible para calcular presupuestos de impresión en una Xerox 550 Digital Press con análisis de rentabilidad en tiempo real.
 
 ## 🚀 Características Principales
