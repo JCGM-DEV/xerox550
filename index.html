@@ -37,10 +37,41 @@
         <div id="drop-error" role="alert" aria-live="polite" style="display: none; padding: 12px; margin-top: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px; color: #ef4444; font-size: 13px;"></div>
 
         <div id="config-panel" role="form" aria-label="Configuración de impresión">
-            <h2>Configuración</h2>
-            
-            <label for="manual-pages">Número de páginas totales</label>
-            <input type="number" id="manual-pages" min="1" max="5000" value="1" aria-label="Introducir número de páginas manualmente">
+            <h2 style="margin-bottom: 20px;">Configuración</h2>
+            <label for="product-category">¿Qué quieres imprimir?</label>
+            <select id="product-category" aria-label="Seleccionar categoría de producto">
+                <option value="standard" selected>Impresión Estándar (PDF/Manual)</option>
+                <option value="flyers">Flyers (A5, A6, DL)</option>
+                <option value="tarjetas">Tarjetas de Visita</option>
+                <option value="folletos">Folletos (Dípticos/Trípticos)</option>
+            </select>
+
+            <div id="standard-options">
+                <label for="manual-pages">Número de páginas totales</label>
+                <input type="number" id="manual-pages" min="1" max="5000" value="1" aria-label="Introducir número de páginas manualmente">
+            </div>
+
+            <div id="flyer-options" style="display: none;">
+                <label for="flyer-size">Tamaño del Flyer</label>
+                <select id="flyer-size">
+                    <option value="a5">A5 (2 por hoja)</option>
+                    <option value="a6">A6 (4 por hoja)</option>
+                    <option value="dl">DL (3 por hoja)</option>
+                </select>
+                <label for="flyer-quantity">Cantidad de Flyers</label>
+                <input type="number" id="flyer-quantity" min="1" value="100">
+            </div>
+
+            <div id="card-options" style="display: none;">
+                <label for="card-pack">Pack de Tarjetas (350g)</label>
+                <select id="card-pack">
+                    <option value="100">100 unidades - 25€</option>
+                    <option value="250">250 unidades - 40€</option>
+                    <option value="500">500 unidades - 70€</option>
+                    <option value="1000">1000 unidades - 120€</option>
+                    <option value="2000">2000 unidades - 200€</option>
+                </select>
+            </div>
 
             <label for="color-type">Tipo de impresión</label>
             <select id="color-type" aria-label="Seleccionar tipo de impresión">
@@ -75,16 +106,33 @@
 
             <div class="tier-badge" id="tier-badge" aria-live="polite" aria-atomic="true"></div>
 
+            <div class="finishing-section">
+                <h3>Acabados (Opcional)</h3>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="finish-binding"> Encuadernación Metálica (+4,00€)
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="finish-lamination"> Laminado Brillo/Mate (+2,50€/hoja)
+                    </label>
+                    <label class="checkbox-label" id="folding-opt" style="display: none;">
+                        <input type="checkbox" id="finish-folding"> Hendido / Plegado (+0,10€/ud)
+                    </label>
+                </div>
+            </div>
+
             <section class="resumen" aria-label="Resumen de presupuesto" aria-live="polite" aria-atomic="true">
                 <div id="file-list" style="margin-bottom: 10px; font-size: 13px; color: var(--text-secondary); background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); display: none;"></div>
 
                 <p>Gestión de archivos: <span style="font-weight: 500;">0,80€</span></p>
-                <p>Páginas PDF / Manual: <span id="page-count" style="font-weight: 700;">1</span></p>
+                <p id="pages-row">Páginas PDF / Manual: <span id="page-count" style="font-weight: 700;">1</span></p>
+                <p id="product-row" style="display: none;">Producto: <span id="product-name" style="font-weight: 700;">-</span></p>
                 <p>Papel y Tamaño: <span id="paper-description" style="font-weight: 500;">A4 · Normal 80g</span></p>
                 <p>Hojas físicas: <span id="sheets-count" style="font-weight: 500;">1 hoja</span></p>
                 
                 <p style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">Costo Copias (Click): <span id="copy-price" style="font-weight: 500;">0,10€</span></p>
                 <p>Suplemento Papel: <span id="paper-extra-price" style="font-weight: 500;">0,00€</span></p>
+                <p id="finishing-row" style="display: none;">Costo Acabados: <span id="finishing-price" style="font-weight: 500;">0,00€</span></p>
                 <p>Base Imponible: <span id="total-base" style="font-weight: 500;">0,90€</span></p>
 
                 <p>IVA (21%): <span id="iva-amount" style="font-weight: 500;">0.17€</span></p>

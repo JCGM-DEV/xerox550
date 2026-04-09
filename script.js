@@ -33,6 +33,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const paperSupportSelect = document.getElementById('paper-support');
     const paperExtraPriceSpan = document.getElementById('paper-extra-price');
     const paperDescriptionSpan = document.getElementById('paper-description');
+    
+    // Controles de Catálogo
+    const productCategorySelect = document.getElementById('product-category');
+    const standardOptions = document.getElementById('standard-options');
+    const flyerOptions = document.getElementById('flyer-options');
+    const cardOptions = document.getElementById('card-options');
+    
+    const flyerSizeSelect = document.getElementById('flyer-size');
+    const flyerQuantityInput = document.getElementById('flyer-quantity');
+    const cardPackSelect = document.getElementById('card-pack');
+    
+    // Checkboxes de Acabados
+    const finishBindingCheck = document.getElementById('finish-binding');
+    const finishLaminationCheck = document.getElementById('finish-lamination');
+    const finishFoldingCheck = document.getElementById('finish-folding');
+    const foldingOptDiv = document.getElementById('folding-opt');
+    
+    // Filas del Resumen
+    const pagesRow = document.getElementById('pages-row');
+    const productRow = document.getElementById('product-row');
+    const productNameSpan = document.getElementById('product-name');
+    const finishingRow = document.getElementById('finishing-row');
+    const finishingPriceSpan = document.getElementById('finishing-price');
 
     const minWarningSpan = document.getElementById('min-warning');
     const tierBadge = document.getElementById('tier-badge');
@@ -149,6 +172,21 @@ document.addEventListener('DOMContentLoaded', () => {
             label: "Papel Color 80g", 
             tiers: [{ max: 50, price: 0.10 }, { max: 200, price: 0.07 }, { max: Infinity, price: 0.05 }] 
         }
+    };
+
+    const CARD_PRICES = {
+        "100": 25.0,
+        "250": 40.0,
+        "500": 70.0,
+        "1000": 120.0,
+        "2000": 200.0
+    };
+
+    const FINISHING_PRICES = {
+        binding: 4.00, // PVP Fijo
+        lamination_a4: 2.50, // PVP por hoja
+        lamination_a3: 4.50, // PVP por hoja
+        folding_unit: 0.10   // Base por unidad
     };
 
     // ═══════════════════════════════════════════════════
@@ -309,6 +347,38 @@ document.addEventListener('DOMContentLoaded', () => {
     sidesSelect.onchange = calculatePrice;
     paperSizeSelect.onchange = calculatePrice;
     paperSupportSelect.onchange = calculatePrice;
+    
+    flyerSizeSelect.onchange = calculatePrice;
+    flyerQuantityInput.oninput = calculatePrice;
+    cardPackSelect.onchange = calculatePrice;
+    
+    finishBindingCheck.onchange = calculatePrice;
+    finishLaminationCheck.onchange = calculatePrice;
+    finishFoldingCheck.onchange = calculatePrice;
+
+    productCategorySelect.onchange = () => {
+        const cat = productCategorySelect.value;
+        standardOptions.style.display = (cat === 'standard' || cat === 'folletos') ? 'block' : 'none';
+        flyerOptions.style.display = (cat === 'flyers') ? 'block' : 'none';
+        cardOptions.style.display = (cat === 'tarjetas') ? 'block' : 'none';
+        foldingOptDiv.style.display = (cat === 'folletos') ? 'flex' : 'none';
+        
+        // Atajos de producto
+        if (cat === 'tarjetas') {
+            paperSizeSelect.value = 'a4';
+            paperSupportSelect.value = 'estucado_300';
+            colorTypeSelect.value = 'color';
+            sidesSelect.value = '2';
+        } else if (cat === 'flyers') {
+            paperSupportSelect.value = 'estucado_130';
+            colorTypeSelect.value = 'color';
+        } else if (cat === 'folletos') {
+            finishFoldingCheck.checked = true;
+        }
+        
+        calculatePrice();
+    };
+
     manualPagesInput.oninput = () => {
         const manualVal = manualPagesInput ? parseInt(manualPagesInput.value) : 1;
         numPages = isNaN(manualVal) ? 1 : manualVal;
@@ -317,51 +387,111 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function calculatePrice() {
+        const cat = productCategorySelect.value;
         const manualVal = manualPagesInput ? parseInt(manualPagesInput.value) : 1;
-        numPages = isNaN(manualVal) ? 1 : manualVal;
         const mode = colorTypeSelect.value;
         const isDuplex = sidesSelect.value === "2";
         const paperSize = paperSizeSelect.value;
         const paperType = paperSupportSelect.value;
         
+        let numPagesLocal = 1;
+        let numSheets = 1;
+        let isCardMode = false;
+
+        // ═══════════════════════════════════════════════════
+        // 1. Lógica de Producto (Presets)
+        // ═══════════════════════════════════════════════════
+        if(cat === 'standard' || cat === 'folletos') {
+            numPagesLocal = isNaN(manualVal) ? 1 : manualVal;
+            numSheets = isDuplex ? Math.ceil(numPagesLocal / 2) : numPagesLocal;
+            if(pagesRow) pagesRow.style.display = 'block';
+            if(productRow) productRow.style.display = 'none';
+        } else if(cat === 'flyers') {
+            const qty = parseInt(flyerQuantityInput.value) || 100;
+            const flyerSize = flyerSizeSelect.value;
+            const poses = (flyerSize === 'a5') ? 2 : (flyerSize === 'a6' ? 4 : 3);
+            numSheets = Math.ceil(qty / poses);
+            numPagesLocal = isDuplex ? (numSheets * 2) : numSheets;
+            if(pagesRow) pagesRow.style.display = 'none';
+            if(productRow) productRow.style.display = 'block';
+            if(productNameSpan) productNameSpan.innerText = `Flyer ${flyerSize.toUpperCase()} (${qty} uds)`;
+        } else if(cat === 'tarjetas') {
+            const pack = cardPackSelect.value;
+            const qty = parseInt(pack);
+            numSheets = Math.ceil(qty / 10); // 10 tarjetas por A4
+            numPagesLocal = isDuplex ? (numSheets * 2) : numSheets;
+            isCardMode = true;
+            if(pagesRow) pagesRow.style.display = 'none';
+            if(productRow) productRow.style.display = 'block';
+            if(productNameSpan) productNameSpan.innerText = `Tarjetas de Visita (${qty} uds)`;
+        }
+
+        numPages = numPagesLocal;
+        pageCountSpan.innerText = numPages;
+
         const sizeMult = SIZE_MULTIPLIERS[paperSize] || 1.0;
         const paperConfig = PAPER_SUPPLEMENTS[paperType] || PAPER_SUPPLEMENTS.normal_80;
-        
-        let numSheets = isDuplex ? Math.ceil(numPages / 2) : numPages;
 
         // Buscar tramo de papel según cantidad de hojas
         const paperTier = paperConfig.tiers.find(t => numSheets <= t.max) || paperConfig.tiers[paperConfig.tiers.length - 1];
         const paperExtraUnit = paperTier.price * sizeMult;
         
-        // 1. Buscar tramo de impresión (click)
+        // 2. Buscar tramo de impresión (click)
         const config = PRICING[mode];
         const tierIndex = config.tiers.findIndex(t => numPages <= t.max);
-        const tier = config.tiers[tierIndex];
+        const tier = (tierIndex === -1) ? config.tiers[config.tiers.length - 1] : config.tiers[tierIndex];
         
         const unitSimplex = tier.simplex * sizeMult;
         const unitDuplex = tier.duplex * sizeMult;
 
-        // 2. Mostrar tramo activo
-        const tierLabels = ['1-50 págs', '51-200 págs', '+201 págs'];
-        const tierLabelsColor = ['1-50 págs', '51-100 págs', '+101 págs'];
-        const labels = mode === 'bn' ? tierLabels : tierLabelsColor;
-        tierBadge.style.display = 'block';
-        tierBadge.innerHTML = `📊 Tramo: <strong>${labels[tierIndex]}</strong> → ${isDuplex ? unitDuplex.toFixed(2) : unitSimplex.toFixed(2)}€/${isDuplex ? 'hoja' : 'pág'}`;
-
         // 3. Actualizar etiquetas de las opciones
+        tierBadge.style.display = 'block';
+        const labelsArr = mode === 'bn' ? ['1-50 págs', '51-200 págs', '+201 págs'] : ['1-50 págs', '51-100 págs', '+101 págs'];
+        const activeLabel = (tierIndex === -1) ? labelsArr[2] : labelsArr[tierIndex];
+        tierBadge.innerHTML = `📊 Tramo: <strong>${activeLabel}</strong> → ${isDuplex ? unitDuplex.toFixed(2) : unitSimplex.toFixed(2)}€/${isDuplex ? 'hoja' : 'pág'}`;
+        
         simplexLabel.innerText = `Simplex (${unitSimplex.toFixed(2)}€/pág)`;
         duplexLabel.innerText = `Dúplex (${unitDuplex.toFixed(2)}€/hoja)`;
 
-        // 4. Cálculos
-        const totalCopiesBase = isDuplex ? (numSheets * unitDuplex) : (numPages * unitSimplex);
-        const totalPaperExtraBase = numSheets * paperExtraUnit;
-        const totalBase = totalCopiesBase + totalPaperExtraBase + GESTION_ARCHIVOS_PVP;
+        // 4. Cálculos base
+        let totalCopiesBase = isDuplex ? (numSheets * unitDuplex) : (numPages * unitSimplex);
+        let totalPaperExtraBase = numSheets * paperExtraUnit;
+
+        // Si es modo Pack de Tarjetas, sobrescribimos el calculo técnico con el precio del pack
+        if(isCardMode) {
+            const pvpPack = CARD_PRICES[cardPackSelect.value];
+            const basePack = pvpPack / IVA_FACTOR;
+            totalCopiesBase = basePack; // El pack ya incluye la impresión y el papel
+            totalPaperExtraBase = 0;
+        }
+        
+        // 5. Acabados
+        let finishingTotalPVP = 0;
+        if(finishBindingCheck.checked) finishingTotalPVP += FINISHING_PRICES.binding;
+        if(finishLaminationCheck.checked) {
+            const lamPrice = (paperSize === 'a4') ? FINISHING_PRICES.lamination_a4 : FINISHING_PRICES.lamination_a3;
+            finishingTotalPVP += (lamPrice * numSheets);
+        }
+        if(finishFoldingCheck.checked && cat !== 'tarjetas') {
+            let foldingQty = (cat === 'flyers') ? (parseInt(flyerQuantityInput.value) || 100) : 1;
+            if(cat === 'folletos') foldingQty = 1; 
+            if(cat === 'standard') foldingQty = numSheets; 
+            finishingTotalPVP += (FINISHING_PRICES.folding_unit * foldingQty * IVA_FACTOR);
+        }
+
+        const finishingBase = finishingTotalPVP / IVA_FACTOR;
+        const totalBase = totalCopiesBase + totalPaperExtraBase + GESTION_ARCHIVOS_PVP + finishingBase;
 
         // 6. PVP Total e IVA
         const totalPVP = totalBase * IVA_FACTOR;
         const ivaAmount = totalPVP - totalBase;
 
         // 8. Actualizar UI
+        if(finishingRow) {
+            finishingRow.style.display = (finishingTotalPVP > 0) ? 'block' : 'none';
+        }
+        if(finishingPriceSpan) finishingPriceSpan.innerText = finishingTotalPVP.toFixed(2) + '€';
+        
         if(paperDescriptionSpan) paperDescriptionSpan.innerText = `${paperSize.toUpperCase()} · ${paperConfig.label} (${paperExtraUnit.toFixed(2)}€/hoja)`;
         if(paperExtraPriceSpan) paperExtraPriceSpan.innerText = totalPaperExtraBase.toFixed(2) + '€';
         if(copyPriceSpan) copyPriceSpan.innerText = totalCopiesBase.toFixed(2) + '€';
