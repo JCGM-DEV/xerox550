@@ -108,30 +108,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const COST_MAINT_COLOR = 0.035; // Drums + Toner Color (Peplogar)
     const COST_REPAIRS = 0.005;     // Provisión para Averías (Fusor, Banda, etc)
 
-    // Precios Base Imponible (tasas por tramos, sin IVA)
-
+    // Tarifas PVP (IVA ya incluido). Lo que cobra el mostrador.
     const PRICING = {
         bn: {
             name: "Blanco y Negro",
             tiers: [
-                { max: 50, simplex: 0.10, duplex: 0.15 },
-                { max: 200, simplex: 0.05, duplex: 0.08 },
+                { max: 50,       simplex: 0.10, duplex: 0.15 },
+                { max: 200,      simplex: 0.05, duplex: 0.08 },
                 { max: Infinity, simplex: 0.04, duplex: 0.06 }
             ]
         },
         color: {
             name: "Color Digital",
             tiers: [
-                { max: 50, simplex: 0.30, duplex: 0.45 },
-                { max: 100, simplex: 0.15, duplex: 0.25 },
+                { max: 50,       simplex: 0.30, duplex: 0.45 },
+                { max: 100,      simplex: 0.15, duplex: 0.25 },
                 { max: Infinity, simplex: 0.10, duplex: 0.18 }
             ]
         }
     };
 
-    const GESTION_ARCHIVOS_PVP = 0.80;
-    const PEDIDO_MINIMO_PVP = 1.00;
-    const IVA_FACTOR = 1.21;
+    // NOTA: GESTION_ARCHIVOS_PVP y FINISHING_PRICES son PVP final (IVA incluido)
+    const GESTION_ARCHIVOS_PVP = 0.80;  // PVP con IVA
+    const PEDIDO_MINIMO_PVP   = 1.00;  // PVP con IVA
+    const IVA_FACTOR          = 1.21;
 
     const SIZE_MULTIPLIERS = {
         a4: 1.0,
@@ -139,47 +139,16 @@ document.addEventListener('DOMContentLoaded', () => {
         sra3: 2.0
     };
 
+    // Suplementos de papel: PVP por hoja (IVA incluido)
     const PAPER_SUPPLEMENTS = {
-        normal_80: { 
-            label: "Normal 80g", 
-            tiers: [{ max: Infinity, price: 0.0 }] 
-        },
-        estucado_100: { 
-            label: "Estucado 100g", 
-            tiers: [{ max: 50, price: 0.15 }, { max: 200, price: 0.10 }, { max: Infinity, price: 0.06 }] 
-        },
-        estucado_130: { 
-            label: "Estucado 130g", 
-            tiers: [{ max: 50, price: 0.15 }, { max: 200, price: 0.10 }, { max: Infinity, price: 0.06 }] 
-        },
-        estucado_200: { 
-            label: "Estucado 200g", 
-            tiers: [{ max: 50, price: 0.30 }, { max: 200, price: 0.20 }, { max: Infinity, price: 0.12 }] 
-        },
-        estucado_250: { 
-            label: "Estucado 250g", 
-            tiers: [{ max: 50, price: 0.30 }, { max: 200, price: 0.20 }, { max: Infinity, price: 0.12 }] 
-        },
-        estucado_300: { 
-            label: "Estucado 300g", 
-            tiers: [{ max: 50, price: 0.45 }, { max: 200, price: 0.25 }, { max: Infinity, price: 0.15 }] 
-        },
-        cartulina_225: { 
-            label: "Cartulina 225g", 
-            tiers: [{ max: 50, price: 0.30 }, { max: 200, price: 0.20 }, { max: Infinity, price: 0.12 }] 
-        },
-        color_80: { 
-            label: "Papel Color 80g", 
-            tiers: [{ max: 50, price: 0.10 }, { max: 200, price: 0.07 }, { max: Infinity, price: 0.05 }] 
-        }
-    };
-
-    const CARD_PRICES = {
-        "100": 25.0,
-        "250": 40.0,
-        "500": 70.0,
-        "1000": 120.0,
-        "2000": 200.0
+        normal_80:     { label: "Normal 80g",            tiers: [{ max: Infinity, price: 0.00 }] },
+        estucado_100:  { label: "Estucado 100g",         tiers: [{ max: 50, price: 0.15 }, { max: 200, price: 0.10 }, { max: Infinity, price: 0.06 }] },
+        estucado_130:  { label: "Estucado 130g",         tiers: [{ max: 50, price: 0.15 }, { max: 200, price: 0.10 }, { max: Infinity, price: 0.06 }] },
+        estucado_200:  { label: "Estucado 200g",         tiers: [{ max: 50, price: 0.30 }, { max: 200, price: 0.20 }, { max: Infinity, price: 0.12 }] },
+        estucado_250:  { label: "Estucado 250g",         tiers: [{ max: 50, price: 0.30 }, { max: 200, price: 0.20 }, { max: Infinity, price: 0.12 }] },
+        estucado_300:  { label: "Estucado 300g",         tiers: [{ max: 50, price: 0.45 }, { max: 200, price: 0.25 }, { max: Infinity, price: 0.15 }] },
+        cartulina_225: { label: "Cartulina 225g",        tiers: [{ max: 50, price: 0.30 }, { max: 200, price: 0.20 }, { max: Infinity, price: 0.12 }] },
+        color_80:      { label: "Papel de Colores 80g",  tiers: [{ max: 50, price: 0.10 }, { max: 200, price: 0.07 }, { max: Infinity, price: 0.05 }] }
     };
 
     const FINISHING_PRICES = {
@@ -187,6 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
         lamination_a4: 2.50, // PVP por hoja
         lamination_a3: 4.50, // PVP por hoja
         folding_unit: 0.10   // Base por unidad
+    };
+
+    const POSES_SRA3 = {
+        tarjeta: 21,
+        a5: 4,
+        a6: 8,
+        dl: 6
     };
 
     // ═══════════════════════════════════════════════════
@@ -365,14 +341,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Atajos de producto
         if (cat === 'tarjetas') {
-            paperSizeSelect.value = 'a4';
+            paperSizeSelect.value = 'a3';
             paperSupportSelect.value = 'estucado_300';
             colorTypeSelect.value = 'color';
             sidesSelect.value = '2';
         } else if (cat === 'flyers') {
+            paperSizeSelect.value = 'a3';
             paperSupportSelect.value = 'estucado_130';
             colorTypeSelect.value = 'color';
         } else if (cat === 'folletos') {
+            paperSizeSelect.value = 'a3';
             finishFoldingCheck.checked = true;
         }
         
@@ -387,177 +365,181 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function calculatePrice() {
-        const cat = productCategorySelect.value;
+        const cat      = productCategorySelect.value;
         const manualVal = manualPagesInput ? parseInt(manualPagesInput.value) : 1;
-        const mode = colorTypeSelect.value;
+        const mode     = colorTypeSelect.value;
         const isDuplex = sidesSelect.value === "2";
-        const paperSize = paperSizeSelect.value;
-        const paperType = paperSupportSelect.value;
-        
+
         let numPagesLocal = 1;
         let numSheets = 1;
-        let isCardMode = false;
 
         // ═══════════════════════════════════════════════════
-        // 1. Lógica de Producto (Presets)
+        // 1. Lógica de Producto (Presets y Optimización SRA3)
         // ═══════════════════════════════════════════════════
-        if(cat === 'standard' || cat === 'folletos') {
+        if (cat === 'flyers' || cat === 'tarjetas' || cat === 'folletos') {
+            paperSizeSelect.value = 'a3'; // Forzamos A3/SRA3 para productos comerciales
+        }
+
+        const paperSize = paperSizeSelect.value;
+        const sizeMult  = SIZE_MULTIPLIERS[paperSize] || 1.0;
+
+        if (cat === 'standard') {
             numPagesLocal = isNaN(manualVal) ? 1 : manualVal;
-            numSheets = isDuplex ? Math.ceil(numPagesLocal / 2) : numPagesLocal;
-            if(pagesRow) pagesRow.style.display = 'block';
-            if(productRow) productRow.style.display = 'none';
-        } else if(cat === 'flyers') {
-            const qty = parseInt(flyerQuantityInput.value) || 100;
-            const flyerSize = flyerSizeSelect.value;
-            const poses = (flyerSize === 'a5') ? 2 : (flyerSize === 'a6' ? 4 : 3);
-            numSheets = Math.ceil(qty / poses);
-            numPagesLocal = isDuplex ? (numSheets * 2) : numSheets;
-            if(pagesRow) pagesRow.style.display = 'none';
-            if(productRow) productRow.style.display = 'block';
-            if(productNameSpan) productNameSpan.innerText = `Flyer ${flyerSize.toUpperCase()} (${qty} uds)`;
-        } else if(cat === 'tarjetas') {
-            const pack = cardPackSelect.value;
-            const qty = parseInt(pack);
-            numSheets = Math.ceil(qty / 10); // 10 tarjetas por A4
-            numPagesLocal = isDuplex ? (numSheets * 2) : numSheets;
-            isCardMode = true;
-            if(pagesRow) pagesRow.style.display = 'none';
-            if(productRow) productRow.style.display = 'block';
-            if(productNameSpan) productNameSpan.innerText = `Tarjetas de Visita (${qty} uds)`;
+            numSheets     = isDuplex ? Math.ceil(numPagesLocal / 2) : numPagesLocal;
+            if (pagesRow)  pagesRow.style.display  = 'block';
+            if (productRow) productRow.style.display = 'none';
+        } else if (cat === 'folletos') {
+            numPagesLocal = isNaN(manualVal) ? 1 : manualVal;
+            numSheets     = isDuplex ? Math.ceil(numPagesLocal / 2) : numPagesLocal;
+            if (pagesRow)  pagesRow.style.display  = 'block';
+            if (productRow) productRow.style.display = 'block';
+            productNameSpan.innerText = 'Folleto Plegado (Base SRA3)';
+        } else if (cat === 'flyers') {
+            const qty      = parseInt(flyerQuantityInput.value) || 100;
+            const flyerSz  = flyerSizeSelect.value;
+            const poses    = POSES_SRA3[flyerSz] || 4;
+            numSheets      = Math.ceil(qty / poses);
+            numPagesLocal  = isDuplex ? (numSheets * 2) : numSheets;
+            if (pagesRow)  pagesRow.style.display  = 'none';
+            if (productRow) productRow.style.display = 'block';
+            productNameSpan.innerText = `Flyer ${flyerSz.toUpperCase()} (Poses SRA3: ${poses})`;
+        } else if (cat === 'tarjetas') {
+            const packQty  = parseInt(cardPackSelect.value);
+            const poses    = POSES_SRA3.tarjeta;
+            numSheets      = Math.ceil(packQty / poses);
+            numPagesLocal  = isDuplex ? (numSheets * 2) : numSheets;
+            if (pagesRow)  pagesRow.style.display  = 'none';
+            if (productRow) productRow.style.display = 'block';
+            productNameSpan.innerText = `Tarjetas de Visita (Poses SRA3: ${poses})`;
         }
 
         numPages = numPagesLocal;
         pageCountSpan.innerText = numPages;
 
-        const sizeMult = SIZE_MULTIPLIERS[paperSize] || 1.0;
+        // ── Suplemento papel ──────────────────────────────
+        const paperType   = paperSupportSelect.value;
         const paperConfig = PAPER_SUPPLEMENTS[paperType] || PAPER_SUPPLEMENTS.normal_80;
+        const paperTier   = paperConfig.tiers.find(t => numSheets <= t.max) || paperConfig.tiers[paperConfig.tiers.length - 1];
+        const paperExtraUnitPVP = paperTier.price * sizeMult;  // PVP por hoja (IVA incl.)
 
-        // Buscar tramo de papel según cantidad de hojas
-        const paperTier = paperConfig.tiers.find(t => numSheets <= t.max) || paperConfig.tiers[paperConfig.tiers.length - 1];
-        const paperExtraUnit = paperTier.price * sizeMult;
-        
-        // 2. Buscar tramo de impresión (click)
-        const config = PRICING[mode];
+        // ── Tarifa de copias (click) ──────────────────────
+        const config    = PRICING[mode];
         const tierIndex = config.tiers.findIndex(t => numPages <= t.max);
-        const tier = (tierIndex === -1) ? config.tiers[config.tiers.length - 1] : config.tiers[tierIndex];
-        
-        const unitSimplex = tier.simplex * sizeMult;
-        const unitDuplex = tier.duplex * sizeMult;
+        const tier      = (tierIndex === -1) ? config.tiers[config.tiers.length - 1] : config.tiers[tierIndex];
 
-        // 3. Actualizar etiquetas de las opciones
+        const unitSimplexPVP = tier.simplex * sizeMult;  // PVP por página (IVA incl.)
+        const unitDuplexPVP  = tier.duplex  * sizeMult;
+
+        // ── Etiqueta de tramo ─────────────────────────────
         tierBadge.style.display = 'block';
-        const labelsArr = mode === 'bn' ? ['1-50 págs', '51-200 págs', '+201 págs'] : ['1-50 págs', '51-100 págs', '+101 págs'];
+        const labelsArr = mode === 'bn'
+            ? ['1-50 págs', '51-200 págs', '+201 págs']
+            : ['1-50 págs', '51-100 págs', '+101 págs'];
         const activeLabel = (tierIndex === -1) ? labelsArr[2] : labelsArr[tierIndex];
-        tierBadge.innerHTML = `📊 Tramo: <strong>${activeLabel}</strong> → ${isDuplex ? unitDuplex.toFixed(2) : unitSimplex.toFixed(2)}€/${isDuplex ? 'hoja' : 'pág'}`;
-        
-        simplexLabel.innerText = `Simplex (${unitSimplex.toFixed(2)}€/pág)`;
-        duplexLabel.innerText = `Dúplex (${unitDuplex.toFixed(2)}€/hoja)`;
+        tierBadge.innerHTML = `📊 Tramo: <strong>${activeLabel}</strong> → ${isDuplex ? unitDuplexPVP.toFixed(2) : unitSimplexPVP.toFixed(2)}€/pág`;
 
-        // 4. Cálculos base
-        let totalCopiesBase = isDuplex ? (numSheets * unitDuplex) : (numPages * unitSimplex);
-        let totalPaperExtraBase = numSheets * paperExtraUnit;
+        simplexLabel.innerText = `Simplex (${unitSimplexPVP.toFixed(2)}€/pág)`;
+        duplexLabel.innerText  = `Dúplex  (${unitDuplexPVP.toFixed(2)}€/pág)`;
 
-        // Si es modo Pack de Tarjetas, sobrescribimos el calculo técnico con el precio del pack
-        if(isCardMode) {
-            const pvpPack = CARD_PRICES[cardPackSelect.value];
-            const basePack = pvpPack / IVA_FACTOR;
-            totalCopiesBase = basePack; // El pack ya incluye la impresión y el papel
-            totalPaperExtraBase = 0;
-        }
-        
-        // 5. Acabados
-        let finishingTotalPVP = 0;
-        if(finishBindingCheck.checked) finishingTotalPVP += FINISHING_PRICES.binding;
-        if(finishLaminationCheck.checked) {
+        // ════════════════════════════════════════════════════
+        // CÁLCULO CORRECTO IVA:
+        // Todos los precios de tarifa (PRICING, PAPER_SUPPLEMENTS,
+        // FINISHING_PRICES, GESTION_ARCHIVOS) son PVP final con IVA.
+        // Base Imponible = PVP / 1.21
+        // ════════════════════════════════════════════════════
+
+        // PVP copias
+        const totalCopiesPVP    = isDuplex ? (numSheets * unitDuplexPVP) : (numSheets * unitSimplexPVP);
+        // PVP suplemento papel
+        const totalPaperExtraPVP = numSheets * paperExtraUnitPVP;
+
+        // ── Acabados (PVP con IVA) ────────────────────────
+        let finishingPVP = 0;
+        if (finishBindingCheck.checked) finishingPVP += FINISHING_PRICES.binding;
+        if (finishLaminationCheck.checked) {
             const lamPrice = (paperSize === 'a4') ? FINISHING_PRICES.lamination_a4 : FINISHING_PRICES.lamination_a3;
-            finishingTotalPVP += (lamPrice * numSheets);
+            finishingPVP += lamPrice * numSheets;
         }
-        if(finishFoldingCheck.checked && cat !== 'tarjetas') {
-            let foldingQty = (cat === 'flyers') ? (parseInt(flyerQuantityInput.value) || 100) : 1;
-            if(cat === 'folletos') foldingQty = 1; 
-            if(cat === 'standard') foldingQty = numSheets; 
-            finishingTotalPVP += (FINISHING_PRICES.folding_unit * foldingQty * IVA_FACTOR);
+        if (finishFoldingCheck.checked) {
+            let foldingQty = 1;
+            if (cat === 'flyers')   foldingQty = parseInt(flyerQuantityInput.value) || 100;
+            else if (cat === 'tarjetas') foldingQty = 0;
+            else if (cat === 'folletos' || cat === 'standard') foldingQty = numSheets;
+            finishingPVP += FINISHING_PRICES.folding_unit * foldingQty;
         }
 
-        const finishingBase = finishingTotalPVP / IVA_FACTOR;
-        const totalBase = totalCopiesBase + totalPaperExtraBase + GESTION_ARCHIVOS_PVP + finishingBase;
+        // PVP total (todo en PVP con IVA)
+        const totalPVP  = totalCopiesPVP + totalPaperExtraPVP + GESTION_ARCHIVOS_PVP + finishingPVP;
 
-        // 6. PVP Total e IVA
-        const totalPVP = totalBase * IVA_FACTOR;
+        // Base imponible y desglose IVA
+        const totalBase = totalPVP / IVA_FACTOR;
         const ivaAmount = totalPVP - totalBase;
 
-        // 8. Actualizar UI
-        if(finishingRow) {
-            finishingRow.style.display = (finishingTotalPVP > 0) ? 'block' : 'none';
-        }
-        if(finishingPriceSpan) finishingPriceSpan.innerText = finishingTotalPVP.toFixed(2) + '€';
-        
-        if(paperDescriptionSpan) paperDescriptionSpan.innerText = `${paperSize.toUpperCase()} · ${paperConfig.label} (${paperExtraUnit.toFixed(2)}€/hoja)`;
-        if(paperExtraPriceSpan) paperExtraPriceSpan.innerText = totalPaperExtraBase.toFixed(2) + '€';
-        if(copyPriceSpan) copyPriceSpan.innerText = totalCopiesBase.toFixed(2) + '€';
-        if(totalBaseSpan) totalBaseSpan.innerText = totalBase.toFixed(2) + '€';
-        if(ivaAmountSpan) ivaAmountSpan.innerText = ivaAmount.toFixed(2) + '€';
-        
+        // ── Actualizar UI ─────────────────────────────────
+        if (finishingRow) finishingRow.style.display = (finishingPVP > 0) ? 'block' : 'none';
+        if (finishingPriceSpan) finishingPriceSpan.innerText = finishingPVP.toFixed(2) + '€';
+
+        if (paperDescriptionSpan) paperDescriptionSpan.innerText = `${paperSize.toUpperCase()} · ${paperConfig.label} (${paperExtraUnitPVP.toFixed(2)}€/hoja)`;
+        if (paperExtraPriceSpan)  paperExtraPriceSpan.innerText  = totalPaperExtraPVP.toFixed(2) + '€';
+        if (copyPriceSpan)        copyPriceSpan.innerText        = totalCopiesPVP.toFixed(2) + '€';
+        if (totalBaseSpan)        totalBaseSpan.innerText        = totalBase.toFixed(2) + '€';
+        if (ivaAmountSpan)        ivaAmountSpan.innerText        = ivaAmount.toFixed(2) + '€';
+
         // Animación del precio
         totalPriceSpan.classList.remove('flash');
-        void totalPriceSpan.offsetWidth; // Force reflow
+        void totalPriceSpan.offsetWidth;
         totalPriceSpan.innerText = totalPVP.toFixed(2) + '€';
         totalPriceSpan.classList.add('flash');
-        
-        if(sheetsCountSpan) {
+
+        if (sheetsCountSpan) {
             sheetsCountSpan.innerText = numSheets + (numSheets === 1 ? ' hoja' : ' hojas');
         }
 
         // ═══════════════════════════════════════════════
         // 9. ADMIN: Rentabilidad en tiempo real
+        //    Comparamos costes reales vs. Base Imponible
+        //    (el ingreso real del negocio, sin el IVA que
+        //    se repercute a Hacienda)
         // ═══════════════════════════════════════════════
         adminPanel.style.display = 'block';
-        
-        let paperCost = numSheets * COST_PAPER;
-        let energyCost = numSheets * COST_ENERGY;
-        let maintenCost = numPages * (mode === 'bn' ? COST_MAINT_BN : COST_MAINT_COLOR);
-        let repairsCost = numPages * COST_REPAIRS;
-        
-        let totalCost = paperCost + energyCost + maintenCost + repairsCost;
-        let marginReal = totalBase - totalCost;
-        let marginPct = totalBase > 0 ? ((marginReal / totalBase) * 100) : 0;
 
-        adminCostPaper.innerText = (paperCost + energyCost).toFixed(3) + '€';
-        adminCostClick.innerText = (maintenCost + repairsCost).toFixed(3) + '€';
+        const paperCost   = numSheets * COST_PAPER;
+        const energyCost  = numSheets * COST_ENERGY;
+        const maintenCost = numPages  * (mode === 'bn' ? COST_MAINT_BN : COST_MAINT_COLOR);
+        const repairsCost = numPages  * COST_REPAIRS;
+
+        const totalCost  = paperCost + energyCost + maintenCost + repairsCost;
+        const marginReal = totalBase - totalCost;   // Ingreso neto (sin IVA) - coste real
+        const marginPct  = totalBase > 0 ? (marginReal / totalBase) * 100 : 0;
+
+        adminCostPaper.innerText   = (paperCost + energyCost).toFixed(3) + '€';
+        adminCostClick.innerText   = (maintenCost + repairsCost).toFixed(3) + '€';
         adminRevenueBase.innerText = totalBase.toFixed(2) + '€';
-        adminMargin.innerText = marginReal.toFixed(2) + '€';
-        adminMarginPct.innerText = marginPct.toFixed(0) + '%';
-        adminCostTotal.innerText = totalCost.toFixed(3) + '€';
+        adminMargin.innerText      = marginReal.toFixed(2) + '€';
+        adminMarginPct.innerText   = marginPct.toFixed(0) + '%';
+        adminCostTotal.innerText   = totalCost.toFixed(3) + '€';
 
-        // Color del margen según rentabilidad
-        adminMargin.style.color = marginReal > 0 ? '#4ade80' : '#ef4444';
+        adminMargin.style.color    = marginReal > 0 ? '#4ade80' : '#ef4444';
         adminMarginPct.style.color = marginPct > 40 ? '#4ade80' : marginPct > 20 ? '#facc15' : '#ef4444';
 
         // Log en consola
         console.group(`📋 REPORTE XEROX 550 | ${numPages} págs | ${config.name} | ${isDuplex ? 'Dúplex' : 'Simplex'}`);
-        console.log(`Ingreso Neto (Ex-IVA): ${totalBase.toFixed(4)}€`);
-        console.log(`Gasto Papel+Luz: ${(paperCost + energyCost).toFixed(4)}€`);
-        console.log(`Gasto Mecánico: ${maintenCost.toFixed(4)}€`);
-        console.log(`Provisión Averías: ${repairsCost.toFixed(4)}€`);
-        console.log(`BENEFICIO LIMPIO: ${marginReal.toFixed(4)}€ (${marginPct.toFixed(1)}%)`);
+        console.log(`PVP Total (IVA incl.):  ${totalPVP.toFixed(4)}€`);
+        console.log(`Base Imponible:         ${totalBase.toFixed(4)}€`);
+        console.log(`IVA 21%:               ${ivaAmount.toFixed(4)}€`);
+        console.log(`Coste Papel+Luz:        ${(paperCost + energyCost).toFixed(4)}€`);
+        console.log(`Coste Mecánico:         ${maintenCost.toFixed(4)}€`);
+        console.log(`Provisión Averías:      ${repairsCost.toFixed(4)}€`);
+        console.log(`BENEFICIO LIMPIO:       ${marginReal.toFixed(4)}€ (${marginPct.toFixed(1)}%)`);
         console.groupEnd();
 
-        // Guardar último cálculo para historial
-        lastCalc = {
-            totalPVP,
-            totalBase,
-            totalCost,
-            marginReal,
-            numPages,
-            mode: config.name,
-            isDuplex
-        };
-
+        // Guardar último cálculo
+        lastCalc = { totalPVP, totalBase, totalCost, marginReal, numPages, mode: config.name, isDuplex };
 
         // ═══════════════════════════════════════════════
         // 10. PEDIDO MÍNIMO
         // ═══════════════════════════════════════════════
-        if(totalPVP < PEDIDO_MINIMO_PVP) {
+        if (totalPVP < PEDIDO_MINIMO_PVP) {
             btnOrder.disabled = true;
             minWarningSpan.style.display = 'block';
         } else {
@@ -565,7 +547,6 @@ document.addEventListener('DOMContentLoaded', () => {
             minWarningSpan.style.display = 'none';
         }
 
-        // Mostrar historial
         renderHistory();
     }
 
